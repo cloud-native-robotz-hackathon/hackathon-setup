@@ -1,0 +1,6 @@
+=== Setup Scripts for the Robot Hackathon Evironment
+
+These folder contain various script to provision and prepare the OpenSHift infrastructure on which
+to run the Hackathon 
+
+WARNING: Work in progress, related to evaluating new environments

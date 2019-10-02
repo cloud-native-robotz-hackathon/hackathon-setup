@@ -1,0 +1,49 @@
+---
+- hosts: local
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: create hubcontroller project
+      block:
+        - name: Create Hubcontroller AMQ Project
+          command: oc new-project hub-controller-amq
+      rescue:
+        - name: Switching to project Hubcontroller AMQ
+          command: oc project hub-controller-amq
+
+    - name: download cacerts file
+      command: wget -q -L  https://raw.githubusercontent.com/nexus-Six/robot-hackathon-hub-controller/master/jks/cacerts -O ./cacerts   
+
+    - name: create cacert jks configmap
+      block:
+        - name: new cacert
+          command: oc create configmap cacerts --from-file=./cacerts
+      rescue:
+        - name: update cacert
+          shell: oc create configmap cacerts --from-file=./cacerts --dry-run -o yaml | oc replace -f -
+
+    - name: Deploy Hubcontroller
+      command: oc new-app https://github.com/nexus-Six/robot-hackathon-hub-controller.git
+
+    - name: create hubcontroller project
+      block:
+        - name: Create Hubcontroller AMQ Project
+          command: oc new-project hub-controller-amq
+      rescue:
+        - name: Switching to project Hubcontroller AMQ
+          command: oc project hub-controller-amq
+    
+    - name: download robotmapping configmap file
+      get_url:
+        url: https://raw.githubusercontent.com/nexus-Six/robot-hackathon-hub-controller/master/templates/robotmapping-configmap.yaml
+        dest: ./robotmapping-configmap.yaml
+    
+    - name: create configmap robotmapping jks configmap
+      command: oc create -f ./robotmapping-configmap.yaml
+      ignore_errors: True            
+
+      
+    
+
+

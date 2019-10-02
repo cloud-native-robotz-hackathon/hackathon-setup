@@ -1,0 +1,10 @@
+Steps to prepare robots after configuring network and setting IP address:
+
+* Change hostname
+* Install edgehub as service and start
+
+Usage:
+
+* Add robots to inventory file
+* `ansible-playbook -i inventory prep_robot.yml --ask-pass`
+

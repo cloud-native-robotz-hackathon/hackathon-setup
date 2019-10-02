@@ -1,0 +1,45 @@
+---
+- hosts: all
+  remote_user: root
+  gather_facts: false
+  
+  tasks:
+    - name: Set hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Download edge controller from github
+      get_url:
+        url: https://raw.githubusercontent.com/nexus-Six/openshift-robot-hackathon/master/edge_controller/server.py
+        dest: /usr/local/bin/edgehub.py
+        force: yes
+        mode: '0660'
+
+    - name: Download systemd unit file for edgehub from github
+      get_url:
+        url: https://raw.githubusercontent.com/nexus-Six/openshift-robot-hackathon/master/edge_controller/edgehub.service
+        dest: /lib/systemd/system/edgehub.service
+        force: yes
+        mode: '0440'
+
+    - name: Download amq endpoint from github
+      get_url:
+        url: https://raw.githubusercontent.com/nexus-Six/openshift-robot-hackathon/master/edge_controller/robot-amq-endpoint.py
+        dest: /usr/local/bin/robot-amq-endpoint.py
+        force: yes
+        mode: '0660'
+
+    - name: Install packages for amq endpoint
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - libssl-dev
+        - python-qpid-proton
+
+    - name: Enable and start edgehub service
+      systemd:
+        state: restarted
+        name: edgehub
+        enabled: yes
+        daemon_reload: yes 

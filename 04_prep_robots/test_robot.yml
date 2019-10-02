@@ -1,0 +1,14 @@
+---
+- hosts: all
+  remote_user: root
+  gather_facts: false
+  
+  tasks:
+    - name: Move forward
+      command: curl -d -X http://localhost:5000/forward/10
+
+    - name: Move back
+      command: curl -d -X http://localhost:5000/backward/10
+    
+    - name: Turn left
+      command: curl -d -X http://localhost:5000/right/90

@@ -1,0 +1,14 @@
+---
+# General
+kubeconfig: /home/grieger/.kube/config
+oc_cmd: './oc'
+
+# For workshopper
+workshopper_project: workshopper
+workshopper_name: hackathon-lab-guide
+workshops_urls: "https://raw.githubusercontent.com/cloud-native-robotz-hackathon/hackathon-lab-guide/master/_hackathon1.yml"
+
+# For replacement in lab guide
+ocp_password: "password"
+url_3scale: "https://rh-test.3scale.net/"
+

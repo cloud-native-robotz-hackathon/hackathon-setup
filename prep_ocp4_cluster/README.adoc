@@ -1,0 +1,34 @@
+= Playbook for preparing OCP4.2 cluster for running the robot hackathon
+
+The Playbook `prep-ocp4-robot-hackathon.yml` will try to automate the follwoing steps for you:
+
+* Create a secret from an (existing) htpasswd file with your users
+* Configure the OAuth htpasswd provider to use it
+* Install an instance of Gitea using W Kulhaneks Gitea operator
+* Install Workshopper with the lab guides to serve them from the OCP cluster
+
+== Requirements
+
+* Some variable must be set properly in `vars.yml`, most importantly the location of the `oc` binary and the kube config file.
+* The htpasswd file `robot-hackathon.htpasswd` must exist in the same directory, a template is in this repo.
+* Tested with Ansible 2.9 on Fedora.
+
+== Usage
+
+* Create the htpasswd file
+* Adapt the vars file
+* Make sure oc is logged in to your cluster
+
+Run:
+
+`ansible prep-ocp4-robot-hackathon.yml`
+
+== Disclaimer
+
+This is probably the ugliest Playbook I've written so far (mixture of k8s module invocations and oc commandlines, go figure). I've tried to make it halfways idempotent (apart from the workshopper deployment), but YMMV. It might be quite brittle for this reason, but hey, it works!
+
+== To do
+
+* Make it nicer ;)
+* Create htpasswd file with Ansible
+* Check if oc is found and cluster login works

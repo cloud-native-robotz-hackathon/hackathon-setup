@@ -1,0 +1,87 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars_files:
+    - ./vars.yml
+
+  tasks:
+    - name: create secret
+      shell: |
+        "{{ oc_cmd }}" project openshift-config
+        "{{ oc_cmd }}" get secret htpass-secret || "{{ oc_cmd }}" create secret generic htpass-secret --from-file=htpasswd=./robot-hackathon.htpasswd
+    
+    - name: Create HTPasswd identity provider from inline definition
+      k8s:
+        state: present
+        kubeconfig: "{{ kubeconfig }}"
+        validate_certs: no
+        definition:
+          apiVersion: config.openshift.io/v1
+          kind: OAuth
+          metadata:
+            name: cluster
+          spec:
+            identityProviders:
+            - name: htpasswd_provider 
+              mappingMethod: claim 
+              type: HTPasswd
+              htpasswd:
+                fileData:
+                  name: htpass-secret
+
+    - name: make user admin cluster-admin
+      shell: |
+        "{{ oc_cmd }}" adm policy add-cluster-role-to-user cluster-admin admin
+
+    - name: Install Gitea operator wkulhanek
+      shell: |
+        "{{ oc_cmd }}" get crd | grep "giteas.gpte.opentlc.com" || "{{ oc_cmd }}" create -f https://raw.githubusercontent.com/wkulhanek/gitea-operator/master/deploy/crds/gpte_v1alpha1_gitea_crd.yaml
+        "{{ oc_cmd }}" get clusterrole | grep "gitea-operator" || "{{ oc_cmd }}" create -f https://raw.githubusercontent.com/wkulhanek/gitea-operator/master/deploy/cluster_role.yaml
+        "{{ oc_cmd }}" get project gpte-operators || "{{ oc_cmd }}" new-project gpte-operators --display-name="GPTE Operators"
+        "{{ oc_cmd }}" get sa gitea-operator -n gpte-operators || "{{ oc_cmd }}" create sa gitea-operator -n gpte-operators
+        "{{ oc_cmd }}" adm policy add-cluster-role-to-user gitea-operator system:serviceaccount:gpte-operators:gitea-operator
+        "{{ oc_cmd }}" get deployments --all-namespaces | grep "gitea-operator" || "{{ oc_cmd }}" create -f https://raw.githubusercontent.com/wkulhanek/gitea-operator/master/deploy/operator.yaml -n gpte-operators
+      tags: gitea
+
+    - name: Create project for gitea
+      k8s:
+        api_version: v1
+        kind: Namespace
+        name: "gitea"
+
+    - name: Create new Gitea instance 
+      k8s:
+        state: present
+        kubeconfig: "{{ kubeconfig }}"
+        validate_certs: no
+        definition:
+          apiVersion: gpte.opentlc.com/v1alpha1
+          kind: Gitea
+          metadata:
+            name: gitea-server
+            namespace: gitea
+          spec:
+            postgresqlVolumeSize: 4Gi
+            giteaVolumeSize: 4Gi
+            giteaSsl: True
+            giteaServiceName: gitea
+      tags: gitea
+
+    - name: Create project for workshopper
+      shell: |
+        "{{ oc_cmd }}" project "{{ workshopper_project }}" || "{{ oc_cmd }}" new-project "{{ workshopper_project }}"
+
+    - name: Install lab guide workshopper instance
+      shell: |
+        "{{ oc_cmd }}" new-app quay.io/osevg/workshopper \
+          --name="{{ workshopper_name }}" \
+          -e WORKSHOPS_URLS="{{ workshops_urls }}" \
+          -e OCP-BASEPATH=$("{{ oc_cmd }}" whoami  --show-server=true | perl -ne '/.*api\.(.*)\:.*/ && print "$1\n"') \
+          -e OCP-PASSWORD="{{ ocp_password }}" \
+          -e URL-3SCALE="{{ url_3scale }}" 
+
+    - name: Create route for workshopper
+      shell: |
+        "{{ oc_cmd }}" get route "{{ workshopper_name }}" || "{{ oc_cmd }}" expose svc/"{{ workshopper_name }}"
+

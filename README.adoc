@@ -1,5 +1,7 @@
 === Setup Scripts for the Robot Hackathon Evironment
 
+## ARCHIVED VERSION : Check the aktive repos for the current version
+
 These folder contain various script to provision and prepare the OpenSHift infrastructure on which
 to run the Hackathon 
 
